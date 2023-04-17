@@ -12,7 +12,7 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       let formData = new FormData();
       formData.append('video', videoBlob);
 
-      fetch('https://yourbackendurl.com/upload', {
+      fetch('https://https://body-pose-backend.onrender.com/upload', {
         method: 'POST',
         body: formData
       })

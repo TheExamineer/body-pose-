@@ -12,7 +12,7 @@ export const Content = () => {
                     </Col>
                     <Col size={12} md={6}>
                         <h2>Try It Yourself</h2>
-                        <img src="http://localhost:5000/video_feed" className="rounded thumbnail" alt="Video"></img>
+                        // <img src="http://localhost:5000/video_feed" className="rounded thumbnail" alt="Video"></img>
                     </Col>
                 </Row>
             </Container>

@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, make_response
+from flask import Flask, Response, request, make_response,jsonify
 import mediapipe as mp
 import cv2
 import pickle
@@ -6,40 +6,48 @@ import numpy as np
 import pandas as pd
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+import base64
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///feedback.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
-
-class feedback(db.Model):
-    sno = db.Column(db.Integer, primary_key=True)
-    fname = db.Column(db.String(200), nullable=False)
-    lname = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.Integer, nullable=False) 
-    msg = db.Column(db.String(500), nullable=False)
-
-    def __repr__(self) -> str:
-        return f"{self.sno} - {self.fname}"
-
-@app.route('/')
-def gen():
-    with open('body_language.pkl', 'rb') as f:
+with open('body_language.pkl', 'rb') as f:
         model = pickle.load(f)
 
+
+@app.route('/process_video', methods=['POST'])
+
+def gen():
+   
+
+   
     mp_drawing = mp.solutions.drawing_utils # Drawing helpers
     mp_holistic = mp.solutions.holistic # Mediapipe Solutions
-    cap = cv2.VideoCapture(0)
+    # Get image data from the client
+    image_data = request.files['frame'].read()
+    # nparr = np.frombuffer(image_data, np.uint8)
+    # frames = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+
+
+    # Convert the base64-encoded data to a numpy array
+    img = base64.b64decode(image_data.split(',')[1])
+    npimg = np.frombuffer(img, np.uint8)
+    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR) 
+    processed_frames = []
 # Initiate holistic model
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         
-        while cap.isOpened():
-            ret, frame = cap.read()
-            
+        # while image.isOpened():
+            # frame = image.read()
+            # if not ret:
+            #      print(image)
+            #      break    
             # Recolor Feed
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image.flags.writeable = False        
             
             # Make Detections
@@ -123,30 +131,25 @@ def gen():
                         print("exception")
                         # pass
             
-            ret, buffer = cv2.imencode('.jpg', image)
-            frame = buffer.tobytes()
+            processed_video = cv2.imencode('.jpg', image)[1]
+
+    # return the processed video frame as bytes
+            response = make_response(processed_video.tobytes())
+            response.headers.set('Content-Type', 'image/jpeg')
+            response.headers.set('Content-Disposition', 'attachment', filename='processed_video.jpg')
+            return  jsonify(response),200
+            # buffer = cv2.imencode('.jpg', image)
+            # frame = buffer.tobytes()
             # yield the frame in byte format
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            # yield (b'--frame\r\n'
+            #        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             
-@app.route('/add', methods=['POST'])
-def hello_world():
-    
-    fname = request.form['fname']
-    lname = request.form['lname']
-    email = request.form['email']
-    phone = request.form['phone']
-    msg = request.form['message']
-    
-    fd = feedback(fname=fname, lname=lname, email=email, phone=phone, msg=msg)
-    db.session.add(fd)
-    db.session.commit()
 
-    return {'success': True}, 201
 
-@app.route('/video_feed')
+@app.route('/video')
 def video_feed():
-    return Response(gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen())
+                 
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True, use_reloader=False)

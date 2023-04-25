@@ -4,7 +4,9 @@ import { Banner } from "./components/Banner";
 import { Content } from "./components/Content";
 import { FeedbackForm } from "./components/FeedbackForm";
 import {Footer} from "./components/Footer"
-import './App.css';
+import {WebcamCapture} from "./components/camera"
+
+// import './App.css';
 
 function App() {
   return (
@@ -13,6 +15,7 @@ function App() {
       <Banner />
       <Content />
       <FeedbackForm/>
+      <WebcamCapture/>
       <Footer/>
       
     </>

@@ -1,9 +1,11 @@
 
 import { NavBar } from "./components/NavBar";
 import { Banner } from "./components/Banner";
-import { Content } from "./components/Content";
+// import { Content } from "./components/Content";
 import { FeedbackForm } from "./components/FeedbackForm";
 import {Footer} from "./components/Footer"
+import {WebcamCapture} from "./components/camera"
+
 import './App.css';
 
 function App() {
@@ -11,9 +13,10 @@ function App() {
     <>
       <NavBar/>
       <Banner />
-      <Content />
-      <FeedbackForm/>
-      <Footer/>
+      {/* <Content /> */}
+      {/* <FeedbackForm/> */}
+      <WebcamCapture/>
+      {/* <Footer/> */}
       
     </>
   );

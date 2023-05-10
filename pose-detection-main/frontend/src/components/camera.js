@@ -1,48 +1,94 @@
-import React, { useState } from 'react';
-import Webcam from 'react-webcam';
-import { Button } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from "react";
+import { Button,Img } from "react-bootstrap";
 
-  export function  WebcamCapture() {
-  const [processedVideoSrc, setProcessedVideoSrc] = useState(null);
-  const webcamRef = React.useRef(null);
+export function WebcamCapture() {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [timerId, setTimerId] = useState(null);
+  const [processedImage, setProcessedImage] = useState(null);
 
-  // Function to process the video and display it in the video tag
-  const processVideo = async () => {
-    // Get the webcam frame from the webcam component
-    const video = webcamRef.current.video;
-    const canvas = document.createElement('canvas');
+  useEffect(() => {
+    if (timerId) {
+      return () => clearInterval(timerId);
+    }
+  }, [timerId]);
+
+  const startVideo = async () => {
+    const constraints = { video: true };
+    const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoRef.current.srcObject = mediaStream;
+    videoRef.current.addEventListener("loadedmetadata", () => {
+      videoRef.current.play();
+    });
+  };
+
+  const sendVideo = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Set canvas dimensions to match video dimensions
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    const context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-    const frame = canvas.toDataURL('image/jpeg');
 
-    // Send the webcam frame to the Flask API for processing
-    const response =  fetch('http://localhost:5000/process_video', {
-      method: 'POST',
-      body: frame,
+    // Draw current video frame onto canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Get canvas data and send to backend
+    const dataUrl = canvas.toDataURL("image/JPEG ");
+    console.log("Data being sent to backend:", { frame: dataUrl });
+
+    fetch("http://localhost:5000/process_video", {
+      method: "POST",
+      body: JSON.stringify({ frame: dataUrl }),
+      headers: {
+        "Content-Type": "application/json",
+      }
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      // Set the processed image data
+      setProcessedImage(`data:image/jpeg;base64,${data.processed_image}`);
     });
+  };
 
-    // Get the processed video bytes from the response
-    // const processedVideoBytes = await response.arrayBuffer();
+  const startSendingVideo = () => {
+    const delay = 100; // in milliseconds
+    const timer = setInterval(() => {
+      sendVideo();
+    }, delay);
+    setTimerId(timer);
+  };
 
-    // Create a blob object from the processed video bytes
-    // const processedVideoBlob = new Blob([processedVideoBytes], { type: 'video/mp4' });
-
-    // Create a URL for the processed video blob
-    // const processedVideoUrl = URL.createObjectURL(processedVideoBlob);
-
-    // Set the processed video URL as the source of the video tag
-    // setProcessedVideoSrc(processedVideoUrl);
+  const stopSendingVideo = () => {
+    clearInterval(timerId);
+    setTimerId(null);
   };
 
   return (
     <div>
-      <Webcam ref={webcamRef} />
-      <Button onClick={processVideo}>Process Video</Button>
-      {/* {processedVideoSrc && <video src={processedVideoSrc} controls />} */}
+    {/* Current webcam feed section */}
+    <div style={{ float: "left", marginRight: "20px" }} className="web" class="rounded float-start"  >
+      <h3>Current Webcam Feed</h3>
+      <video ref={videoRef} style={{ width: "100%", height: "auto" }} />
+      <Button onClick={startVideo}>Start Webcam</Button>
+      <br />
+      <br />
+      
+      <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
-  );
+
+    {/* Response video feed section */}
+    <div style={{ float: "right", marginRight: "20px" }}  className="res" >
+      <h3>Response Video Feed</h3>
+      {processedImage && <img src={processedImage} style={{ width: "100%", height: "auto" }} />}
+      {timerId ? (
+        <Button onClick={stopSendingVideo}>Stop Sending Video</Button>
+      ) : (
+        <Button onClick={startSendingVideo}>Start Sending Video & Get Prediction</Button>
+      )}
+    </div>
+  </div>
+);
+  
 }
-
-

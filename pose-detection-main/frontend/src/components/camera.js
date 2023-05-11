@@ -79,7 +79,9 @@ export function WebcamCapture() {
     </div>
 
     {/* Response video feed section */}
-    <div style={{ float: "right", marginRight: "20px" }}  className="res" class="rounded float-start"  >
+
+    <div style={{ float: "right", marginRight: "20px" }}  className="res"   >
+
       <h3>Response Video Feed</h3>
       {processedImage && <img src={processedImage} style={{ width: "100%", height: "auto" }} />}
       {timerId ? (

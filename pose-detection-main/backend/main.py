@@ -4,7 +4,6 @@ import cv2
 import pickle
 import numpy as np
 import pandas as pd
-export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import base64

@@ -38,7 +38,7 @@ export function WebcamCapture() {
     const dataUrl = canvas.toDataURL("image/JPEG ");
     console.log("Data being sent to backend:", { frame: dataUrl });
 
-    fetch("https://body-pose-backend.onrender.com/process_video", {
+    fetch("https://body-pose-backend1.onrender.com/process_video", {
       method: "POST",
       body: JSON.stringify({ frame: dataUrl }),
       headers: {
